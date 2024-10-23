@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat App</title>
+  <style>
+    /* Simple CSS animations and styles */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 350px;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+
+    .container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .input-group button {
+      width: 100%;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .input-group button:hover {
+      background-color: #45a049;
+    }
+
+    /* Message bubbles */
+    .message {
+      display: flex;
+      margin: 10px 0;
+    }
+
+    .message .bubble {
+      padding: 10px;
+      border-radius: 15px;
+      max-width: 70%;
+    }
+
+    .message.sent .bubble {
+      background-color: #dcf8c6;
+      margin-left: auto;
+    }
+
+    .message.received .bubble {
+      background-color: #ececec;
+    }
+
+    /* Stories section */
+    .story {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-right: 10px;
+      background-size: cover;
+      border: 2px solid #4CAF50;
+    }
+
+    .story-section {
+      display: flex;
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+
+    /* Profile image */
+    .profile-img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .profile-section {
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Chat App</h2>
+
+    <!-- User Signup / Login -->
+    <div class="input-group">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="Enter your email">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter your password">
+    </div>
+    <div class="input-group">
+      <button id="signUpBtn">Sign Up</button>
+      <button id="loginBtn">Login</button>
+    </div>
+
+    <!-- Stories Section -->
+    <h3>Your Friends' Stories</h3>
+    <div class="story-section" id="storySection">
+      <!-- Stories will be added here dynamically -->
+    </div>
+
+    <!-- Chat Section -->
+    <h3>Messages</h3>
+    <div id="chatMessages">
+      <!-- Messages will be displayed here -->
+    </div>
+
+    <div class="input-group">
+      <input type="text" id="messageInput" placeholder="Type your message">
+      <button id="sendMessageBtn">Send</button>
+    </div>
+
+    <!-- Profile Picture Upload -->
+    <div class="profile-section">
+      <label>Upload Profile Picture</label>
+      <input type="file" id="profilePicInput">
+      <button id="uploadProfilePicBtn">Upload</button>
+      <div class="profile-img" id="profilePicPreview"></div>
+    </div>
+  </div>
+
+  <!-- Firebase Setup -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage.js"></script>
+  
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+          apiKey: "AIzaSyBB8ty87sh84l1xDmeXGJOhKqEdxXRv4wU",
+          authDomain: "codecamptst.firebaseapp.com",
+          projectId: "codecamptst",
+          storageBucket: "codecamptst.appspot.com",
+          messagingSenderId: "952163116209",
+          appId: "1:952163116209:web:a0eb695ba38b60477aae90"
+        };
+
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // Sign Up
+    document.getElementById('signUpBtn').addEventListener('click', () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+          console.log('User signed up:', userCredential.user);
+        })
+        .catch(error => {
+          console.error('Error signing up:', error);
+        });
+    });
+
+    // Login
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+          console.log('User logged in:', userCredential.user);
+        })
+        .catch(error => {
+          console.error('Error logging in:', error);
+        });
+    });
+
+    // Send Message
+    document.getElementById('sendMessageBtn').addEventListener('click', () => {
+      const message = document.getElementById('messageInput').value;
+      db.collection('messages').add({
+        text: message,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('messageInput').value = ''; // Clear input
+    });
+
+    // Listen for messages
+    db.collection('messages').orderBy('timestamp').onSnapshot(snapshot => {
+      const chatMessages = document.getElementById('chatMessages');
+      chatMessages.innerHTML = ''; // Clear previous messages
+      snapshot.forEach(doc => {
+        const message = doc.data();
+        const messageEl = document.createElement('div');
+        messageEl.classList.add('message');
+        messageEl.innerHTML = `<div class="bubble">${message.text}</div>`;
+        chatMessages.appendChild(messageEl);
+      });
+    });
+
+    // Upload Profile Picture
+    document.getElementById('uploadProfilePicBtn').addEventListener('click', () => {
+      const file = document.getElementById('profilePicInput').files[0];
+      const storageRef = storage.ref('profile_pictures/' + auth.currentUser.uid);
+      storageRef.put(file).then(() => {
+        storageRef.getDownloadURL().then(url => {
+          document.getElementById('profilePicPreview').style.backgroundImage = `url(${url})`;
+        });
+      });
+    });
+
+    // Add a story (only lasts for 24 hours)
+    function addStory(url) {
+      const storySection = document.getElementById('storySection');
+      const storyEl = document.createElement('div');
+      storyEl.classList.add('story');
+      storyEl.style.backgroundImage = `url(${url})`;
+      storySection.appendChild(storyEl);
+
+      // Automatically remove story after 24 hours
+      setTimeout(() => {
+        storyEl.remove();
+      }, 24 * 60 * 60 * 1000);
+    }
+
+    // Example: Add a test story
+    addStory('https://via.placeholder.com/50');
+  </script>
+</body>
+</html>
